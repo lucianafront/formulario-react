@@ -1,6 +1,6 @@
 import logo from './logo.svg';
 import './App.css';
-import Formulario from './componentes/formulario/Formulario ';
+import Formulario from './componentes/formulario/Formulario';
 
 function App() {
   return (
