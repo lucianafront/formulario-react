@@ -1,205 +1,119 @@
-import React, { useState } from "react";
+import React, { Component } from 'react';
 
-const Formulario = () => {
-  const [nome, setNome] = useState("");
-  const [idade, setIdade] = useState("");
-  const [genero, setGenero] = useState("outro");
-  const [estadoCivil, setEstadoCivil] = useState("solteiro");
-  const [tipoDocumento, setTipoDocumento] = useState("Rg");
-  const [documento, setDocumento] = useState("");
-  const [erros, setErro] = useState("");
-  const [respostasAnteriores, setRespostasAnteriores] = useState([]);
-
-
-
-const handleDelete = (index) => {
-    console.log(index);
-    const updatedRespostas = [...respostasAnteriores];
-    updatedRespostas.splice(index, 1);
-    setRespostasAnteriores(updatedRespostas);
+// Função de validação genérica<label for="cidade">Cidade:</label>
+const validateField = (value) => {
+  return value && value.length > 0;
 };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setErro("");
-
-
-    if (
-      !nome ||
-      !idade ||
-      !genero ||
-      !estadoCivil ||
-      !tipoDocumento ||
-      !documento
-    ) {
-      setErro("Preencha todos os campos!");
-      return;
+// HOC para formulários
+const withFormValidation = (WrappedComponent, validationRules) => {
+  return class extends Component {
+    constructor(props) {
+      super(props);
+      this.state = {
+        formData: {},
+        errors: {},
+        success: false
+      };
     }
 
-    const respostaFormulario = {
-      nome,
-      idade,
-      genero,
-      estadoCivil,
-      tipoDocumento,
-      documento,
+    // Função para atualizar o estado do formulário
+    handleChange = (e) => {
+      const { name, value } = e.target;
+      this.setState((prevState) => ({
+        formData: {
+          ...prevState.formData,
+          [name]: value
+        }
+      }));
     };
-    console.log(respostaFormulario);
 
+    // Função para validar o formulário
+    handleSubmit = (e) => {
+      e.preventDefault();
+      const { formData } = this.state;
+      let errors = {};
+      let success = true;
 
-    setRespostasAnteriores([...respostasAnteriores, respostaFormulario]);
-    setNome("");
-    setIdade("");
-    setGenero("outro");
-  setEstadoCivil("solteiro");
-  setTipoDocumento("Rg");
-    setDocumento("");
+      // Verificar cada regra de validação
+      Object.keys(validationRules).forEach((fieldName) => {
+        const rules = validationRules[fieldName];
+        rules.forEach((rule) => {
+          if (rule.isRequired && !validateField(formData[fieldName])) {
+            errors[fieldName] = rule.errorMessage;
+            success = false;
+          }
+          // Aqui você pode adicionar outras validações, como comprimento mínimo, formato de email, etc.
+        });
+      });
+
+      // Atualizar o estado com erros e sucesso
+      this.setState({ errors, success }, () => {
+        if (success) {
+          // Aqui você pode enviar os dados do formulário para o servidor
+          console.log('Formulário válido, enviar dados:', formData);
+        }
+      });
+    };
+
+    render() {
+      const { formData, errors, success } = this.state;
+
+      return (
+        <WrappedComponent
+          formData={formData}
+          errors={errors}
+          success={success}
+          handleChange={this.handleChange}
+          handleSubmit={this.handleSubmit}
+          {...this.props}
+        />
+      );
+    }
   };
+};
 
+// Componente de exemplo de formulário
+const MyForm = ({ formData, errors, success, handleChange, handleSubmit }) => {
   return (
-    <div className="container">
-
-      <div className="row">
-        <div className="col-12">
-          <h1>Formulário</h1>
-        </div>
+    <form onSubmit={handleSubmit}>
+      <div>
+        <label htmlFor="username">Nome:</label>
+        <input type="text" id="username" name="username" value={formData.username || ''} onChange={handleChange} />
+        {errors.username && <span style={{ color: 'red' }}>{errors.username}</span>}
       </div>
-       
-       {erros && <div className="row mt-4"><div className="col-12 text-bg-danger p-1"><h3 className="bs-danger-text-emphasis">{erros}</h3></div></div>} 
-
-
-      <div className="row mt-5">
-        <div className="col-5">
-          <form className="container" onSubmit={handleSubmit}>
-            <div className="form-group row">
-              <label htmlFor="nome" className="col-sm-4 col-form-label">
-                Nome
-              </label>
-              <div className="col-sm-8">
-                <input
-                  type="text"
-                  className="form-control"
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                  placeholder="Nome"
-                />
-              </div>
-            </div>
-            <div className="form-group row">
-              <label htmlFor="idade" className="col-sm-4 col-form-label">
-                Idade
-              </label>
-              <div className="col-sm-8">
-                <input
-                  type="number"
-                  className="form-control"
-                  value={idade}
-              onChange={(e) => setIdade(e.target.value)}
-                  placeholder="Idade"
-                />
-              </div>
-            </div>
-            <div className="form-group row">
-              <label htmlFor="genero" className="col-sm-4 col-form-label">
-                Gênero
-              </label>
-              <div className="col-sm-8">
-              <select className="form-control" value={genero} onChange={(e) => setGenero(e.target.value)} >
-                  <option value="masculino">Masculino</option>
-                  <option value="feminino">Feminino</option>
-                  <option value="outro">Outro</option>
-                </select>
-              </div>
-            </div>
-            <div className="form-group row">
-              <label htmlFor="estadoCivil" className="col-sm-4 col-form-label">
-                Estado Civil
-              </label>
-              <div className="col-sm-8">
-              <select className="form-control" value={estadoCivil} onChange={(e) => setEstadoCivil(e.target.value)} >
-                  <option value="solteiro">Solteiro</option>
-                  <option value="casado">Casado</option>
-                  <option value="divorciado">Divorciado</option>
-                  <option value="viuvo">Viúvo</option>
-                </select>
-              </div>
-            </div>
-            <div className="form-group row">
-              <label htmlFor="tipoDocumento" className="col-sm-4 col-form-label">
-                Tipo de Documento
-              </label>
-              <div className="col-sm-8">
-              <select className="form-control" value={tipoDocumento} onChange={(e) => setTipoDocumento(e.target.value)} >
-                  <option value="Rg">RG</option>
-                  <option value="Cpf">CPF</option>
-                  <option value="Passaporte">Passaporte</option>
-                </select>
-              </div>
-            </div>
-            {tipoDocumento !== '' && (
-                <div className="form-group row">
-              <label htmlFor="documento" className="col-sm-4 col-form-label">
-              Número do {tipoDocumento}
-              </label>
-              <div className="col-sm-8">
-                <input
-                  type="text"
-                  className="form-control"
-                  value={documento}
-                onChange={(e) => setDocumento(e.target.value)}
-                  placeholder="Documento"
-                />
-              </div>
-            </div>
-            )}
-       
-            <div className="form-group row">
-              <div className="col-sm-8 offset-sm-2">
-                <button type="submit" className="btn btn-primary">
-                  Submit
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-
-        <div className="col-7">
-          {respostasAnteriores.length > 0 && (
-            <div class="table-responsive">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>Nome</th>
-                    <th>Idade</th>
-                    <th>Gênero</th>
-                    <th>Estado Civil</th>
-                    <th>Tipo de Documento</th>
-                    <th>Documento</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {respostasAnteriores.map((resposta, index) => (
-                    <tr key={index}>
-                      <td>{resposta.nome}</td>
-                      <td>{resposta.idade}</td>
-                      <td>{resposta.genero}</td>
-                      <td>{resposta.estadoCivil}</td>
-                      <td>{resposta.tipoDocumento}</td>
-                      <td>{resposta.documento}</td>
-                      <td>
-                    <button class="btn btn-danger" onClick={() => handleDelete(index)}>Delete</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+      <label htmlFor="idade">Idade:</label>
+      <input type="text" id="idade" name="idade" value={formData.idade || ''} onChange={handleChange} />
+      {errors.username && <span style={{ color: 'red' }}>{errors.idade}</span>}
+      <div>
+        
+        <label htmlFor="email">Email:</label>
+        <input type="email" id="email" name="email" value={formData.email || ''} onChange={handleChange} />
+        {errors.email && <span style={{ color: 'red' }}>{errors.email}</span>}
       </div>
+      <button type="submit">Enviar</button>
+      {success && <p style={{ color: 'green' }}>Formulário enviado com sucesso!</p>}
+    </form>
+  );
+};
+
+// Regras de validação para o formulário de exemplo
+const validationRules = {
+  username: [{ isRequired: true, errorMessage: 'Nome de usuário é obrigatório' }],
+  email: [{ isRequired: true, errorMessage: 'Email é obrigatório' }]
+};
+
+// Aplicar o HOC ao componente de formulário
+const FormWithValidation = withFormValidation(MyForm, validationRules);
+
+// Exemplo de uso do componente de formulário com validação
+const App = () => {
+  return (
+    <div>
+      <h1>Cadastro em Loja</h1>
+      <FormWithValidation />
     </div>
   );
 };
 
-export default Formulario;
+export default App;
